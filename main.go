@@ -8,9 +8,11 @@ import (
 )
 
 func main() {
+    cfg := &config{}
     scanner := bufio.NewScanner(os.Stdin)
     fmt.Print("Welcome to the Pokedex! \n")
     for {
+        fmt.Print("Pokedex > ")
         var formattedInput string
         if scanner.Scan(){
             scannedInput := scanner.Text()
@@ -18,15 +20,16 @@ func main() {
         }
 
         foundCommand, exists := commands[formattedInput]
-        if exists == true{
-            err := foundCommand.callback()
+        if exists{
+            err := foundCommand.callback(cfg)
             if err != nil{
                 fmt.Printf("Looks like there was an error : %v", err)
             } 
-        }else if exists == false{
+        }else if !exists{
                 fmt.Println("Unknown command")
             }
     }
+
 }
 
 ///This function will take the input and strip/split it based off the delimiter(whitespaces)
@@ -37,4 +40,3 @@ func cleanInput(text string) string{
 
     return lowerCase
     }
-
