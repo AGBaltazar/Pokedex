@@ -3,19 +3,18 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-    "encoding/json"
 )
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config) error
-
+	callback    func(*config, []string) error
    
 }
 
@@ -23,22 +22,40 @@ var commands = map[string]cliCommand{
     "exit": {
         name:        "exit",
         description: "Exit the Pokedex",
-        callback:    commandExit,
+        callback: func(cfg *config, args []string) error {
+            return commandExit(cfg)
+        },
     },
 	"help": {
         name:        "help",
         description: "Displays a help message",
-        callback: commandHelp,
+        callback: func(cfg *config, args []string) error {
+            return commandHelp(cfg)
+        },
     },
     "map": {
         name:        "map",
         description: "Displays 20 locations from the PokeWorld",
-        callback: commandMap,
+        callback: func(cfg *config, args []string) error {
+            return commandMap(cfg)
+        },
     },
     "mapb": {
         name:        "mapb",
         description: "Displays the previous 20 locations from the Pokeworld",
-        callback: commandMapb,
+        callback: func(cfg *config, args []string) error {
+            return commandMapb(cfg)
+        },
+    },
+    "explore":{
+        name:       "explore",
+        description: "Returns a list of pokemon within a given PokeTown",
+        callback: func(cfg *config, args []string) error {
+            if len(args) < 1 {
+                return fmt.Errorf("please provide a location name")
+            }
+            return commandExplore(cfg, args[0])
+        },
     },
 }
 
@@ -60,12 +77,25 @@ type Map struct {
 	Count    int    `json:"count"`
 	Next     string `json:"next"`
 	Previous *string   `json:"previous"`
-	Results  []LocationArea
+	Results []LocationArea
 }
 type LocationArea struct{
 	Name string `json:"name"`
 	URL  string `json:"url"`
-	
+}
+
+type LocationPokemon struct{
+    Encounter []struct{}
+    PokeEncounter []struct {
+        Pokemon Pokemon `json:"pokemon"`
+    } `json:"pokemon_encounters"`
+
+}
+
+type Pokemon struct{
+   Name string `json:"name"`
+   URL  string `json:"url"`
+    
 }
 
 type config struct {
@@ -146,5 +176,41 @@ func commandMapb(cfg *config) error{
     }
     return nil
 }
+
+func commandExplore(cfg *config, name string) error{
+    baseUrl := "https://pokeapi.co/api/v2/location-area/"
+    locationName := name
+    Url := baseUrl + locationName
+
+    res, err := http.Get(Url)
+    if err != nil{
+        log.Fatal(err)
+    }
+    body, err := io.ReadAll(res.Body)
+    res.Body.Close()
+
+    if res.StatusCode > 299 {
+		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
+   //Unmarshaling the data and "copying" it to location
+    pokemon := LocationPokemon{}
+    error := json.Unmarshal(body, &pokemon)
+    if error != nil{
+        fmt.Println(error)
+    }
+
+    //Now once we have the data we will only pull what is needed with a for loop
+    fmt.Printf("Exploring %v...\n" ,locationName)
+    fmt.Println("Found Pokemon:\n")
+    for _, locationPokemon := range pokemon.PokeEncounter{
+        fmt.Printf("-%v\n", locationPokemon.Pokemon.Name)
+    }
+    return nil
+}
+
 
 

@@ -20,8 +20,11 @@ func main() {
         }
 
         foundCommand, exists := commands[formattedInput[0]]
-        if exists{
-            err := foundCommand.callback(cfg)
+        if exists {
+            if len(formattedInput) > 1 {
+            strings.Join(formattedInput[1:], " ")
+            }
+            err := foundCommand.callback(cfg, formattedInput[1:])
             if err != nil{
                 fmt.Printf("Looks like there was an error : %v", err)
             } 
