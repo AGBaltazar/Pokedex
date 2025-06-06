@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestCleanInput(t *testing.T) {
     cases := []struct {
@@ -33,7 +35,7 @@ for _, c := range cases {
 	for i := range actual {
 		word := actual[i]
 		expectedWord := c.expected[i]
-		if word != expectedWord{
+		if string(word) != expectedWord{
 			t.Errorf("Whoops looks like word: %v and expected word: %v do not match", word, expectedWord)
 		}
 	}

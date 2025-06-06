@@ -13,13 +13,13 @@ func main() {
     fmt.Print("Welcome to the Pokedex! \n")
     for {
         fmt.Print("Pokedex > ")
-        var formattedInput string
+        var formattedInput []string
         if scanner.Scan(){
             scannedInput := scanner.Text()
             formattedInput = cleanInput(scannedInput)
         }
 
-        foundCommand, exists := commands[formattedInput]
+        foundCommand, exists := commands[formattedInput[0]]
         if exists{
             err := foundCommand.callback(cfg)
             if err != nil{
@@ -33,10 +33,14 @@ func main() {
 }
 
 ///This function will take the input and strip/split it based off the delimiter(whitespaces)
-func cleanInput(text string) string{
+func cleanInput(text string) []string{
     word := strings.Fields(text)
+    var lowerCase []string
+    for i := range word {
+        
+        lowerCase = append(lowerCase, strings.ToLower(word[i]))
     
-    lowerCase := strings.ToLower(word[0])
+}
 
     return lowerCase
     }
