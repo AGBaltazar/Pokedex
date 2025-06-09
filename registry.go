@@ -3,13 +3,14 @@
 package main
 
 import (
-    "math/rand"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+
 )
 
 type cliCommand struct {
@@ -66,6 +67,23 @@ var commands = map[string]cliCommand{
                 return fmt.Errorf("Please provide a pokemon name: \n")
             }
             return commandCatch(cfg, args[0])
+        },
+    },
+    "inspect":{
+        name: "inspect",
+        description: "Views data of a caught Pokemon",
+        callback: func(cfg *config, args []string) error {
+            if len(args) < 1 {
+                return fmt.Errorf("Please provide a pokemon name: \n")
+            }
+            return commandInspect(cfg, args[0])
+        },
+    },
+    "pokedex":{
+        name: "pokedex",
+        description: "Lists all caught Pokemon",
+        callback: func(cfg *config, args []string) error {
+            return commandPokedex(cfg)
         },
     },
 }
@@ -265,10 +283,35 @@ func commandCatch(cfg *config, name string) error{
         catchChance := rand.Intn(baseExperience + 50)
         if catchChance > baseExperience {
             cfg.PokeCollection[pokemonName] = Pokemon{Name: pokemonName}
-            fmt.Printf("%v was caught!\n", pokemonName)
+            fmt.Printf("%v was caught!\n You may now inspect it with the inspect command.\n", pokemonName)
         } else{
             fmt.Printf("%v escaped!\n", pokemonName)
         }
         return nil
     
+}
+
+//////Inspecting Logic/////
+func commandInspect(cfg *config, name string) error{
+   
+   if _, ok := cfg.PokeCollection[name];ok {
+            fmt.Printf("Name: %v\n", name)
+        } else{
+            fmt.Printf("Whoops, looks like %v is not caught yet\n", name)
+        }
+    return nil
+}
+
+////////Pokedex listing Logic////////
+func commandPokedex(cfg *config) error{
+    if len(cfg.PokeCollection) == 0{
+        fmt.Println("Looks like you havent caught any Pokemon!\n")
+    }else {
+        fmt.Println("Current caught Pokemon:")
+       for _, v := range cfg.PokeCollection {
+            fmt.Println("-\n", v.Name)
+        }
+     
+    }
+    return nil
 }
