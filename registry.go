@@ -3,6 +3,7 @@
 package main
 
 import (
+    "math/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -57,6 +58,16 @@ var commands = map[string]cliCommand{
             return commandExplore(cfg, args[0])
         },
     },
+    "catch":{
+        name: "catch",
+        description: "",
+        callback: func(cfg *config, args []string) error {
+            if len(args) < 1 {
+                return fmt.Errorf("Please provide a pokemon name: \n")
+            }
+            return commandCatch(cfg, args[0])
+        },
+    },
 }
 
 //Fuction command that will return only an error/nil
@@ -67,7 +78,7 @@ func commandExit(cfg *config) error{
     }
 
 func commandHelp(cfg *config) error{
-    fmt.Println("Welcome to the Pokedex! \nUsage: \n Map \nhelp: Displays a help message\n exit: Exit the Pokedex")
+    fmt.Println("Welcome to the Pokedex! \nUsage: \n Map: \nExplore \n Catch \nhelp: Displays a help message\n exit: Exit the Pokedex")
     return nil
 }
 
@@ -98,9 +109,15 @@ type Pokemon struct{
     
 }
 
+type Pokedex struct{
+    Name string `json:"name"`
+    BaseExperience int `json:"base_experience"`
+}
+
 type config struct {
     nextURL     string
     previousURL string
+    PokeCollection map[string]Pokemon
 }
 
 func commandMap(cfg *config) error{
@@ -213,4 +230,45 @@ func commandExplore(cfg *config, name string) error{
 }
 
 
+/////////Catching Logic//////
+func commandCatch(cfg *config, name string) error{
+    baseUrl := "https://pokeapi.co/api/v2/pokemon/"
+    pokemonName := name
+    Url := baseUrl + pokemonName
 
+    fmt.Println(Url)
+
+    res, err := http.Get(Url)
+    if err != nil{
+        log.Fatal(err)
+    }
+    body, err := io.ReadAll(res.Body)
+    res.Body.Close()
+
+    if res.StatusCode > 299 {
+		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
+    //Unmarshaling the data and "copying" it to pokemon struct
+    caughtpokemon := Pokedex{}
+    error := json.Unmarshal(body, &caughtpokemon)
+    if error != nil{
+        fmt.Println(error)
+    }
+
+    //Now once we have the data we will only pull what is needed with a for loop
+    fmt.Printf("Throwing a Pokeball at %v...\n", pokemonName)
+        baseExperience := caughtpokemon.BaseExperience
+        catchChance := rand.Intn(baseExperience + 50)
+        if catchChance > baseExperience {
+            cfg.PokeCollection[pokemonName] = Pokemon{Name: pokemonName}
+            fmt.Printf("%v was caught!\n", pokemonName)
+        } else{
+            fmt.Printf("%v escaped!\n", pokemonName)
+        }
+        return nil
+    
+}
